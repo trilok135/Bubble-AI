@@ -1,0 +1,11 @@
+{
+  "name": "bubble-ai-extension",
+  "version": "1.0.0",
+  "description": "Bubble AI build config",
+  "scripts": {
+    "build": "esbuild background/service-worker.js --bundle --outfile=background/service-worker-bundle.js --format=esm"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bubble AI Note — Never explain it twice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0b0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='9' cy='9' r='7' fill='%23f3f1ec'/%3E%3Ccircle cx='17' cy='16' r='4' fill='%23c9a869'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0b0a; --bg-2:#050504;
+    --ink:#f3f1ec; --muted:#948f86; --muted-soft:#6f6b64;
+    --paper:#efe9dd; --accent:#c9a869; --accent-dim:#8a7448;
+    --glass-fill: rgba(255,255,255,0.045);
+    --glass-fill-strong: linear-gradient(150deg, rgba(30,27,22,.78), rgba(10,10,9,.86));
+    --glass-border: rgba(255,255,255,0.12);
+    --glass-border-soft: rgba(255,255,255,0.08);
+    --gutter: clamp(24px, 4vw, 64px);
+    --nav-h: 42px;
+    font-family: "IBM Plex Sans", Arial, sans-serif;
+  }
+  html,body{background:#0b0b0a !important;color:#f3f1ec;}
+  body{background:#0b0b0a;color:#f3f1ec;}
+  html,body{background:var(--bg,#0b0b0a);color:var(--ink,#f3f1ec);}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility; overflow:hidden; position:relative;
+    height:100%; width:100%;
+  }
+  html{height:100%;overflow:hidden;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer;}
+
+  /* ---------- backdrop ---------- */
+  .backdrop{
+    position:fixed; inset:0; z-index:-3;
+    background:
+      radial-gradient(ellipse 70% 60% at 18% 78%, rgba(201,168,105,0.10), transparent 60%),
+      radial-gradient(ellipse 60% 55% at 88% 14%, rgba(255,255,255,0.05), transparent 55%),
+      linear-gradient(180deg, #060605 0%, #0b0b0a 45%, #080706 100%);
+  }
+  .grain{
+    position:fixed; inset:0; z-index:100; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* halftone dot field — dense over the demo side, dissolving toward the hero copy,
+     echoing the dot-gradient sign-in screens and the pointillist reference */
+  .halftone{
+    position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.55;
+    background-image: radial-gradient(rgba(243,241,236,.9) 1px, transparent 1.4px);
+    background-size: 8px 8px;
+    -webkit-mask-image: radial-gradient(ellipse 62% 72% at 84% 34%, black 0%, black 30%, transparent 68%);
+    mask-image: radial-gradient(ellipse 62% 72% at 84% 34%, black 0%, black 30%, transparent 68%);
+  }
+  .halftone::after{
+    content:""; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(201,168,105,.9) 1px, transparent 1.4px);
+    background-size: 8px 8px; background-position:4px 4px;
+    -webkit-mask-image: radial-gradient(ellipse 40% 46% at 90% 20%, black 0%, black 40%, transparent 75%);
+    mask-image: radial-gradient(ellipse 40% 46% at 90% 20%, black 0%, black 40%, transparent 75%);
+  }
+  .scrim::before{
+    content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background: linear-gradient(180deg, rgba(0,0,0,.35), transparent 22%, transparent 78%, rgba(0,0,0,.4));
+  }
+
+  .page{position:relative;z-index:1;display:grid;grid-template-rows:auto 1fr auto;height:100vh;height:100dvh;}
+
+  /* ---------- header ---------- */
+  header.header{
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+    padding: clamp(18px,2.4vh,28px) var(--gutter) 10px;
+    position:relative; z-index:50;
+  }
+  .logo{
+    display:inline-flex; align-items:center; gap:9px; justify-self:start;
+    font-size:15.5px; font-weight:500; letter-spacing:-0.02em; color:var(--ink);
+  }
+  .logo svg{width:21px;height:21px;flex:none;}
+  .logo .suffix{color:var(--muted); font-weight:400;}
+
+  nav.nav{display:flex; align-items:center; gap:6px; justify-self:center;}
+  nav.nav a{
+    height:var(--nav-h); display:inline-flex; align-items:center; padding:0 16px;
+    border-radius:7px; font-size:13.5px; font-weight:450; color:var(--muted);
+    border:1px solid transparent; transition:color .3s ease, border-color .3s ease, background .3s ease;
+  }
+  nav.nav a:hover{ color:var(--ink); border-color:var(--glass-border-soft); background:rgba(255,255,255,.03); }
+
+  .header-cta{ justify-self:end; }
+  .btn{
+    position:relative; isolation:isolate; overflow:hidden;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    height:40px; padding:0 18px; border-radius:7px; font-size:13.5px; font-weight:500;
+    letter-spacing:-0.01em; white-space:nowrap;
+    transition:filter .3s ease, box-shadow .3s ease, border-color .3s ease;
+  }
+  .btn::after{
+    content:""; position:absolute; inset:0; z-index:1;
+    background:linear-gradient(115deg, transparent 25%, rgba(255,255,255,.35) 50%, transparent 75%);
+    transform:translateX(-130%);
+  }
+  .btn:hover::after{ transform:translateX(130%); transition:transform .65s ease; }
+  .btn-solid{
+    background:linear-gradient(180deg,#f7f3ea 0%, #e7dfc9 55%, #cdbb92 100%);
+    color:#1b1710; border:1px solid #f3ecdb;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+  }
+  .btn-solid:hover{ box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 0 22px rgba(201,168,105,.28); }
+  .btn-ghost{
+    background:linear-gradient(135deg, rgba(255,255,255,.07), rgba(0,0,0,.3) 55%, rgba(201,168,105,.06));
+    color:var(--ink); border:1px solid var(--glass-border);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .btn-ghost:hover{ border-color:rgba(201,168,105,.5); box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 0 18px rgba(201,168,105,.16); }
+
+  /* ---------- hero ---------- */
+  main.hero{
+    position:relative; display:flex; align-items:flex-end;
+    padding: 8px var(--gutter) clamp(40px,6vh,72px);
+    min-height:0;
+  }
+  .hero-copy{ position:relative; z-index:2; max-width:560px; }
+  h1{
+    font-family:"Fraunces", Georgia, serif; font-style:italic; font-weight:500;
+    font-size:clamp(34px, 5.2vw, 60px); line-height:1.05; letter-spacing:-0.01em; color:var(--ink);
+  }
+  h1 .line{ display:block; overflow:hidden; padding:0.08em 0.02em 0.16em; }
+  h1 .reveal{ display:inline-block; }
+  .lede{
+    margin-top:20px; max-width:420px; color:var(--muted); font-size:15px; font-weight:400;
+    line-height:1.6; letter-spacing:-0.005em;
+  }
+  .hero-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; }
+  .hero-actions .btn{ height:44px; padding:0 20px; font-size:14px; }
+
+  /* ---------- demo composition (right side) ---------- */
+  .stage{
+    position:absolute; right:var(--gutter); bottom:clamp(40px,6vh,72px); top: clamp(90px,14vh,140px);
+    width:min(40vw, 500px); pointer-events:none;
+    display:flex; flex-direction:column; justify-content:flex-end; gap:14px;
+  }
+  .browser{
+    position:relative; width:100%; flex:none;
+    border-radius:14px; border:1px solid var(--glass-border);
+    background:var(--glass-fill-strong);
+    box-shadow:0 20px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+    backdrop-filter:blur(18px) saturate(108%); -webkit-backdrop-filter:blur(18px) saturate(108%);
+    overflow:visible;
+  }
+  .browser-bar{
+    display:flex; align-items:center; gap:6px; padding:10px 14px;
+    border-bottom:1px solid var(--glass-border-soft);
+  }
+  .browser-bar span{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.16); }
+  .browser-body{ padding:18px 22px 22px; overflow:hidden; border-radius:0 0 14px 14px; }
+  .browser-body p{
+    font-size:12px; line-height:1.7; color:var(--muted-soft); letter-spacing:-0.005em;
+  }
+  .hl{
+    background:rgba(201,168,105,.22); border-radius:3px; color:var(--paper); position:relative; padding:0 1px;
+  }
+  .bubble-tip{
+    position:absolute; width:min(78%, 230px); left:14%; top:52%;
+    border-radius:12px; border:1px solid rgba(201,168,105,.35);
+    background:linear-gradient(150deg, rgba(35,30,20,.92), rgba(10,9,7,.94));
+    box-shadow:0 16px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(14px); padding:14px 16px;
+  }
+  .bubble-tip .tag{ font-size:10.5px; letter-spacing:.02em; color:var(--accent); font-weight:500; }
+  .bubble-tip .txt{ margin-top:6px; font-size:12px; line-height:1.55; color:var(--ink); }
+
+  .mode-row{ display:flex; gap:10px; flex:none; }
+  .mode-card{
+    flex:1; min-width:0; border-radius:12px; border:1px solid var(--glass-border);
+    background:var(--glass-fill-strong); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    box-shadow:0 10px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05);
+    padding:13px 12px 12px;
+  }
+  .dot-icon{
+    width:24px; height:24px;
+    background: radial-gradient(circle, var(--accent) 1.1px, transparent 1.5px) 0 0/4px 4px;
+    -webkit-mask-size:contain; mask-size:contain;
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+    -webkit-mask-position:center; mask-position:center;
+  }
+  .dot-icon--notes{
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='4' y='3' width='16' height='18' rx='2'/%3E%3Cpath d='M8 8h8M8 12h8M8 16h5'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='4' y='3' width='16' height='18' rx='2'/%3E%3Cpath d='M8 8h8M8 12h8M8 16h5'/%3E%3C/svg%3E");
+  }
+  .dot-icon--quiz{
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.1-1.5 2.4'/%3E%3Ccircle cx='12' cy='18' r='.6' fill='black' stroke='none'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.1-1.5 2.4'/%3E%3Ccircle cx='12' cy='18' r='.6' fill='black' stroke='none'/%3E%3C/svg%3E");
+  }
+  .dot-icon--exam{
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8 12.5l2.5 2.5L16 9.5'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8 12.5l2.5 2.5L16 9.5'/%3E%3C/svg%3E");
+  }
+  .mode-name{ margin-top:10px; font-size:12px; font-weight:500; color:var(--ink); letter-spacing:-0.005em; }
+  .mode-tag{ margin-top:3px; font-size:10px; color:var(--muted); letter-spacing:.01em; }
+
+  /* ---------- footer stats ---------- */
+  footer.stats{
+    position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between;
+    gap:20px; padding:0 var(--gutter) clamp(22px,4vh,36px);
+    padding-bottom:max(clamp(22px,4vh,36px), env(safe-area-inset-bottom));
+    color:var(--muted); flex-wrap:wrap;
+  }
+  .stat{ display:inline-flex; align-items:center; gap:10px; font-size:13px; letter-spacing:-0.01em; white-space:nowrap; }
+  .stat svg{ width:16px; height:16px; flex:none; color:var(--accent); }
+
+  /* ---------- entrance motion ---------- */
+  .appear{ opacity:1; animation-duration:.9s; animation-fill-mode:both; animation-timing-function:cubic-bezier(.16,1,.3,1); animation-delay:var(--d,.05s); }
+  .appear--soft{ animation-name:in-soft; }
+  .appear--scale{ animation-name:in-scale; }
+  .appear--mask{ animation-name:in-mask; animation-duration:.85s; }
+  .appear--btn{ animation-name:in-btn; }
+  .appear--stat{ animation-name:in-stat; }
+  .appear--stage{ animation-name:in-stage; animation-duration:1s; }
+  @keyframes in-soft{ from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;} }
+  @keyframes in-scale{ from{opacity:0; transform:scale(.9);} to{opacity:1; transform:none;} }
+  @keyframes in-mask{ from{opacity:0; transform:translateY(45%);} to{opacity:1; transform:none;} }
+  @keyframes in-btn{ from{opacity:0; transform:translateY(16px) scale(.96);} to{opacity:1; transform:none;} }
+  @keyframes in-stat{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+  @keyframes in-stage{ from{opacity:0; transform:translateY(18px) scale(.97);} to{opacity:1; transform:none;} }
+  .is-in{ animation:none !important; opacity:1 !important; transform:none !important; }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation:none !important; transition:none !important; }
+    .appear{ opacity:1; transform:none; }
+  }
+
+  a:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:980px){
+    .stage{ display:none; }
+    .hero-copy{ max-width:520px; }
+  }
+  @media (max-height:760px) and (min-width:981px){
+    .mode-row{ display:none; }
+  }
+  @media (max-width:700px){
+    html,body{ height:auto; overflow-y:auto; }
+    .page{ height:auto; min-height:100vh; min-height:100dvh; }
+    header.header{ grid-template-columns:1fr auto; }
+    nav.nav{ display:none; }
+    main.hero{ align-items:flex-start; padding-top:8vh; }
+    h1{ font-size:clamp(30px,9vw,40px); }
+    footer.stats{ flex-direction:column; align-items:flex-start; gap:12px; }
+  }
+</style>
+</head>
+<body class="scrim" style="background:#0b0b0a;color:#fff">
+<div class="backdrop" aria-hidden="true"></div>
+<div class="halftone" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="page">
+  <header class="header">
+    <a class="logo appear appear--scale" style="--d:.05s" href="#top" aria-label="Bubble AI Note home">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="9" cy="9" r="7" fill="#f3f1ec"/>
+        <circle cx="17" cy="16" r="4" fill="#c9a869"/>
+      </svg>
+      Bubble AI<span class="suffix"> Note</span>
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <a class="appear appear--scale" style="--d:.12s" href="#how">How it works</a>
+      <a class="appear appear--soft" style="--d:.2s" href="#modes">Modes</a>
+    </nav>
+
+    <div class="header-cta">
+      <a class="btn btn-ghost appear appear--scale" style="--d:.18s" href="#install">Add to Chrome</a>
+    </div>
+  </header>
+
+  <main class="hero" id="top">
+    <div class="hero-copy">
+      <h1>
+        <span class="line"><span class="reveal appear appear--mask" style="--d:.3s">Never explain</span></span>
+        <span class="line"><span class="reveal appear appear--mask" style="--d:.42s">it twice.</span></span>
+      </h1>
+      <p class="lede appear appear--soft" style="--d:.56s">
+        Bubble floats over any tab, explains what you select, and remembers
+        what you're studying — so you never re-paste a wall of context to start over.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-solid appear appear--btn" style="--d:.68s" href="#install">Add to Chrome — it's free</a>
+        <a class="btn btn-ghost appear appear--btn" style="--d:.78s" href="#how">See how it works</a>
+      </div>
+    </div>
+
+    <div class="stage appear appear--stage" style="--d:.5s" aria-hidden="true">
+      <div class="browser">
+        <div class="browser-bar"><span></span><span></span><span></span></div>
+        <div class="browser-body">
+          <p>
+            …the compound interest formula assumes contributions happen at
+            regular intervals. <span class="hl">Once you factor in variable
+            timing</span>, the closed-form solution breaks down and you
+            need a discrete summation instead…
+          </p>
+        </div>
+        <div class="bubble-tip">
+          <div class="tag">EXPLAIN</div>
+          <div class="txt">This just means: add up each contribution's own
+            growth separately, since they don't all compound for the same
+            length of time.</div>
+        </div>
+      </div>
+      <div class="mode-row">
+        <div class="mode-card">
+          <div class="dot-icon dot-icon--notes"></div>
+          <div class="mode-name">Notes</div>
+          <div class="mode-tag">Auto-summarized</div>
+        </div>
+        <div class="mode-card">
+          <div class="dot-icon dot-icon--quiz"></div>
+          <div class="mode-name">Quiz</div>
+          <div class="mode-tag">Spaced recall</div>
+        </div>
+        <div class="mode-card">
+          <div class="dot-icon dot-icon--exam"></div>
+          <div class="mode-name">Exam</div>
+          <div class="mode-tag">Worked answers</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="stats" id="modes">
+    <div class="stat appear appear--stat" style="--d:.85s">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      8 modes — explain, notes, quiz, exam &amp; more
+    </div>
+    <div class="stat appear appear--stat" style="--d:.95s" id="how">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+      Works on any tab, no copy-paste
+    </div>
+    <div class="stat appear appear--stat" style="--d:1.05s" id="install">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+      Free to start, bring your own key
+    </div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('.appear').forEach(function(el){
+    el.addEventListener('animationend', function(){ el.classList.add('is-in'); }, { once:true });
+  });
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      document.querySelectorAll('.appear').forEach(function(el){
+        var anims = el.getAnimations ? el.getAnimations() : [];
+        var active = anims.some(function(a){ return a.playState === 'running' || a.playState === 'finished'; });
+        if(!active) el.classList.add('is-in');
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

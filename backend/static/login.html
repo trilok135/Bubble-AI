@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Bubble AI</title>
+  <!--
+    Bubble AI web login.
+    - Google One Tap (g_id_onload) + official Google button (g_id_signin).
+    - Client ID is fetched from GET /api/v1/auth/config (public, non-secret).
+    - The returned Google ID token is POSTed to /api/v1/auth/google where it is
+      cryptographically verified; the browser only ever handles the token
+      transiently and never receives secrets.
+    - Google's own rendered UI (One Tap prompt + button) is NOT styled, hidden,
+      or overlaid by this page.
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background:
+        radial-gradient(1200px 500px at 20% -10%, rgba(120, 160, 255, 0.12), transparent 60%),
+        radial-gradient(900px 500px at 85% 110%, rgba(160, 120, 255, 0.10), transparent 55%),
+        #0b0d12;
+      color: #e8eaf0; padding: 24px;
+    }
+    .mist { position: fixed; inset: 0; pointer-events: none; opacity: .35;
+      background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 3px 3px; }
+    .card {
+      width: 100%; max-width: 400px; padding: 36px 32px;
+      background: rgba(17, 20, 28, 0.92); border: 1px solid rgba(255,255,255,.09);
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+      position: relative; z-index: 1;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .brand svg { width: 22px; height: 22px; color: #a5b4fc; }
+    .brand-name { font-size: 11px; letter-spacing: .22em; color: #9aa3b2; }
+    h1 { font-size: 24px; font-weight: 600; margin-bottom: 6px; }
+    .sub { font-size: 12px; color: #8b93a3; margin-bottom: 24px; }
+    #googleBtn { min-height: 44px; display: flex; justify-content: center; margin-bottom: 14px; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 18px 0;
+      color: #5b6270; font-size: 10px; letter-spacing: .2em; }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.08); }
+    .status { margin-top: 18px; font-size: 11px; min-height: 16px; }
+    .status.err { color: #f87171; }
+    .status.ok { color: #4ade80; }
+    .hint { margin-top: 26px; font-size: 10px; color: #565e6c; line-height: 1.6; }
+    a { color: #818cf8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="mist"></div>
+  <main class="card">
+    <div class="brand">
+      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+      <span class="brand-name">BUBBLE INTELLIGENCE</span>
+    </div>
+    <h1>Sign in</h1>
+    <p class="sub">Continue to your Bubble AI dashboard</p>
+
+    <!-- Official Google Sign-In button (GIS renders this; we do not style it) -->
+    <div id="googleBtn"></div>
+
+    <div class="divider">OR CONTINUE WITH ONE TAP</div>
+
+    <!-- Google One Tap mount point: GIS positions its own prompt; never overlay it -->
+    <div id="oneTapContainer" style="position:relative;"></div>
+
+    <div id="status" class="status"></div>
+
+    <p class="hint">
+      No Google prompt? Your browser may block third-party cookies or you may already be
+      signed in. Use the button above. Backend health: <a href="/api/v1/health">/api/v1/health</a>
+    </p>
+  </main>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    const statusEl = document.getElementById("status");
+    function setStatus(msg, cls = "") { statusEl.textContent = msg; statusEl.className = "status " + cls; }
+
+    async function postCredential(credential) {
+      setStatus("Verifying with Bubble AI…");
+      try {
+        const res = await fetch("/api/v1/auth/google", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credential }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const code = body && body.error && body.error.code ? body.error.code : "UNKNOWN";
+          setStatus(`Sign-in failed (${code}).`, "err");
+          return;
+        }
+        // Persist the Bubble AI session for the web app (same storage contract
+        // as the extension: minimal data, expiring session).
+        const expiresAt = body.expires_at ? Date.parse(body.expires_at) : Date.now() + 7 * 24 * 3600 * 1000;
+        localStorage.setItem("bubble_auth", JSON.stringify({
+          session_token: body.session_token, expires_at: expiresAt, user: body.user,
+        }));
+        setStatus(`Signed in as ${body.user.email || body.user.name || "user"}. Redirecting…`, "ok");
+        setTimeout(() => { window.location.href = "/"; }, 900);
+      } catch (e) {
+        setStatus("Network error reaching Bubble AI backend.", "err");
+      }
+    }
+
+    window.handleCredentialResponse = (response) => {
+      if (response && response.credential) postCredential(response.credential);
+      else setStatus("No credential returned by Google.", "err");
+    };
+
+    (async function init() {
+      let cfg;
+      try {
+        cfg = await (await fetch("/api/v1/auth/config")).json();
+      } catch (_) {
+        setStatus("Cannot reach Bubble AI backend.", "err");
+        return;
+      }
+      const clientId = cfg.google_client_id;
+      if (!clientId) {
+        setStatus("Google sign-in is not configured on this server (set GOOGLE_CLIENT_ID). See docs/google-auth-setup.md.", "err");
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: window.handleCredentialResponse,
+        auto_select: false,
+        use_fedcm_for_prompt: true, // modern Chrome FedCM-backed One Tap
+      });
+
+      // One Tap prompt (passive convenience path)
+      window.google.accounts.id.prompt();
+
+      // Official button (explicit fallback path)
+      window.google.accounts.id.renderButton(
+        document.getElementById("googleBtn"),
+        { theme: "filled_black", size: "large", shape: "pill", text: "signin_with", logo_alignment: "left" }
+      );
+    })();
+
+    // Session restore: already signed in? go to the app.
+    (function restore() {
+      try {
+        const raw = localStorage.getItem("bubble_auth");
+        if (!raw) return;
+        const session = JSON.parse(raw);
+        if (session.expires_at && Date.now() < session.expires_at && session.session_token) {
+          setStatus("Already signed in. Redirecting…", "ok");
+          setTimeout(() => { window.location.href = "/"; }, 600);
+        }
+      } catch (_) {}
+    })();
+  </script>
+</body>
+</html>

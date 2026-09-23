@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Bubble AI",
+  "version": "0.2.0",
+  "description": "Floating AI study bubble: select text on any page, pick a mode, get an answer.",
+  "minimum_chrome_version": "102",
+  "oauth2": {
+    "client_id": "<YOUR_GOOGLE_CLIENT_ID>",
+    "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
+  },
+  "permissions": ["activeTab", "storage", "identity"],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.groq.com/*",
+    "https://api.openai.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Bubble AI"
+  },
+  "options_page": "settings/settings.html",
+  "options_ui": {
+    "page": "settings/settings.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "bubble/bubble.html",
+        "bubble/bubble.css",
+        "bubble/bubble.js",
+        "bubble/boot-animation.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

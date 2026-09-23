@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bubble AI — Settings</title>
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <main class="wrap">
+    <h1>Bubble AI Settings</h1>
+
+    <section class="card">
+      <h2>About Bubble AI</h2>
+      <p class="hint">
+        Bubble AI runs completely locally inside your browser using IndexedDB and JavaScript Machine Learning. 
+        It does not require a backend server.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>API Keys</h2>
+      <p class="hint">
+        Keys are stored securely in your browser's local storage and are only sent directly to the AI provider.
+      </p>
+      
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="pname">Gemini (Google)</span>
+          <span class="tag">Free tier available</span>
+          <span class="key-status" id="geminiStatus">checking...</span>
+        </div>
+        <div class="provider-row">
+          <label class="field">
+            <span>API key</span>
+            <input id="geminiKey" type="password" placeholder="AIza..." />
+          </label>
+        </div>
+      </div>
+      
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="pname">Groq</span>
+          <span class="tag">Fastest / Free tier</span>
+          <span class="key-status" id="groqStatus">checking...</span>
+        </div>
+        <div class="provider-row">
+          <label class="field">
+            <span>API key</span>
+            <input id="groqKey" type="password" placeholder="gsk_..." />
+          </label>
+        </div>
+      </div>
+      
+      <div class="provider-card">
+        <div class="provider-head">
+          <span class="pname">OpenAI</span>
+          <span class="tag">Paid</span>
+          <span class="key-status" id="openaiStatus">checking...</span>
+        </div>
+        <div class="provider-row">
+          <label class="field">
+            <span>API key</span>
+            <input id="openaiKey" type="password" placeholder="sk-..." />
+          </label>
+        </div>
+      </div>
+
+      <button id="saveBtn" class="btn primary">Save keys</button>
+      <div id="saveMsg" class="msg"></div>
+    </section>
+
+    <section class="card">
+      <h2>Status &amp; usage</h2>
+      <table class="status-table">
+        <thead>
+          <tr><th>Provider</th><th>Health</th><th>Requests today</th></tr>
+        </thead>
+        <tbody id="statusBody"></tbody>
+      </table>
+      <button id="refreshBtn" class="btn">Refresh status</button>
+    </section>
+
+    <section class="card">
+      <h2>Session & Memory</h2>
+      <div id="sessionInfo" class="hint">No active session.</div>
+      <button id="newSessionBtn" class="btn">New session</button>
+      <button id="clearMemoryBtn" class="btn ghost" style="color: var(--danger, #ff4d4f); border-color: var(--danger, #ff4d4f);">Clear Memory</button>
+    </section>
+  </main>
+  <script src="settings.js"></script>
+</body>
+</html>

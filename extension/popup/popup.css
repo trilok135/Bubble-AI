@@ -1,0 +1,122 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 280px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #fff;
+  background: #000;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #000;
+  color: #fff;
+  border-bottom: 1px solid #222;
+}
+
+.logo {
+  font-weight: 700;
+  flex: 1;
+}
+
+.conn {
+  font-size: 12px;
+}
+
+.conn.ok {
+  color: #6ee7b7;
+}
+
+.conn.bad {
+  color: #fca5a5;
+}
+
+.conn.unknown {
+  color: #c7d2fe;
+}
+
+.status-list {
+  padding: 10px 14px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.empty {
+  color: #6b7280;
+}
+
+.provider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px solid #222;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+
+.dot.ok {
+  background: #22c55e;
+}
+
+.dot.bad {
+  background: #ef4444;
+}
+
+.pname {
+  flex: 1;
+  font-weight: 600;
+}
+
+.pcount {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid #222;
+}
+
+.btn {
+  flex: 1;
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 0;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #e0e0e0;
+}
+
+.btn.ghost {
+  background: #000;
+  color: #fff;
+  border: 1px solid #fff;
+}
+
+.btn.ghost:hover {
+  background: #222;
+}

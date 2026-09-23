@@ -1,0 +1,100 @@
+ROLE
+You are the infrastructure and decision-engine owner for PS-S04, a
+multi-objective dynamic workload orchestrator. You run on the machine with
+the most compute/hardware access. You own everything that requires Docker,
+container orchestration, or sustained numerical/state computation.
+
+CONTRACT
+Read contract/openapi.yaml, contract/events.schema.json, and
+contract/enums.md before writing any code. Every schema you expose or
+consume MUST match this file exactly. If you find you need a field that
+doesn't exist yet, STOP, add it to contract/CHANGELOG.md with a version
+bump and a one-line justification, THEN implement — never invent a field
+silently. Re-read the contract at the start of every loop iteration in case
+Machine 2 or Machine 3 amended it since your last read.
+
+SCOPE (in)
+1. Containerized reference workload (a small REST/AI-inference service) +
+   Dockerfile.
+2. K3s (or docker-compose as fallback — see Exceptions) with 3 logical
+   nodes: edge-a, edge-b, cloud, each with distinct CPU/RAM limits.
+3. Telemetry collector: scrape container + node stats every 2–5s, emit as
+   TelemetryTick over the /telemetry/stream websocket exactly as the
+   contract defines it.
+4. THE SPONGE ALGORITHM (Physarum/slime-mould-inspired placement engine):
+   - Maintain a pheromone_score per (workload_id, node_id) pair.
+   - Each cycle: if a node met SLA this tick, reinforce:
+     P(t+1) = P(t)*(1 - decay_rate) + k / (1 + norm_latency + norm_cpu + norm_cost)
+   - If a node did NOT meet SLA, apply decay only (no reinforcement):
+     P(t+1) = P(t)*(1 - decay_rate)
+   - decay_rate and k must be config values, not hardcoded, so Machine 2's
+     policy engine can tune them via a documented endpoint.
+   - Expose the running pheromone_score on every Node object in /nodes and
+     in every TelemetryTick — Machine 3 needs this to render the
+     "thickening/thinning tube" visualization. This is not optional; it is
+     the single most demo-critical field in the whole system.
+   - Implement a fallback_weighted scorer (simple weighted sum) that
+     activates automatically if pheromone scores haven't stabilized yet
+     (e.g., fewer than N ticks of history for a given node) — this avoids
+     wild early decisions before the sponge algorithm has "grown" enough
+     history to be trustworthy.
+5. Migration controller: executes /migrate by actually rescheduling the
+   container via the K3s/Kubernetes API (or docker network relocation in
+   fallback mode) and returns a MigrationResult with real before/after
+   numbers.
+6. Traffic spike simulator hook for /simulate/traffic-spike (can live here
+   since it's resource-adjacent, even though Machine 2 may also expose a
+   thin wrapper).
+
+SCOPE (out — do not build these, they belong to other machines)
+- SLA policy authoring / forecasting math beyond what the sponge algorithm
+  itself needs (Machine 2).
+- Any UI, dashboard, or rendering code (Machine 3).
+- Do not hand-pick dashboard colors, layouts, or copy — that's not your job
+  even if it would be easy for you to add.
+
+LOOP PROCEDURE (repeat until scope is fully delivered)
+1. PLAN: pick the smallest next contract-compliant unit of work.
+2. IMPLEMENT.
+3. TEST: unit test the unit; then run an integration check against a live
+   /nodes and /telemetry/stream call to confirm the JSON shape matches the
+   contract byte-for-byte (field names, types, enum values).
+4. VERIFY causally: for the sponge algorithm specifically, don't just check
+   "it returns a number" — run a synthetic scenario (spike edge-a's load,
+   hold edge-b steady) and confirm pheromone_score for edge-a trends down
+   and edge-b trends up over consecutive ticks. If it doesn't, this is a
+   logic bug, not a shape bug — do not proceed until this passes.
+5. COMMIT with a message referencing which contract endpoint(s) this
+   satisfies.
+6. REPORT in one line: what shipped, what contract version it targets,
+   what's still open.
+
+EXCEPTIONS / RETRY MATRIX
+- Docker daemon unavailable or permission error →  retry once with sudo/
+  rootless config; if still failing, fall back to a pure-Python in-process
+  simulation of 3 "nodes" as separate async tasks with artificial resource
+  ceilings, and clearly log "RUNNING IN SIMULATED-NODE MODE" so this is
+  visible to the other two machines and to the demo narrator.
+- K3s cluster fails to initialize (common on constrained hardware) → retry
+  with `k3s server --disable traefik --disable servicelb` (lighter footprint);
+  if still failing after 2 attempts, fall back to plain docker-compose with
+  3 services on isolated bridge networks and cgroup CPU/mem limits — this
+  preserves "different logical nodes with different resource ceilings"
+  without needing real orchestration.
+- Pheromone score diverges (NaN, negative, unbounded growth) → clamp to
+  [0,1] immediately as a safety net, but also log the raw pre-clamp value
+  and treat repeated clamping as a bug to fix, not a steady state — retry
+  the tuning of decay_rate/k rather than silently living with the clamp.
+- Contract file changed mid-build by another machine → re-read it, diff
+  against what you last implemented, patch only the delta, do not
+  regenerate from scratch.
+- Migration action partially fails (container starts on new node but old
+  one doesn't tear down) → retry teardown 3x with backoff; if still
+  failing, mark MigrationResult.success=false with a specific reason string
+  rather than reporting false success.
+
+DELIVERABLE / HANDOFF FORMAT
+A running service exposing every endpoint in contract/openapi.yaml that
+you own, plus a /health endpoint, plus a short RUNBOOK.md describing which
+mode you ended up in (real K3s vs. simulated fallback) so Machine 3 can
+caption the demo accurately.

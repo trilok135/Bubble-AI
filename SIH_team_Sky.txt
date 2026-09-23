@@ -1,0 +1,71 @@
+**OVERALL STRUCTURE**
+
+Backend stack -> FastAPI + Python. Stateless. In-memory pandas/numpy. Data: Jena Climate CSV (10min, 2009-2016) + synthetic fault injection engine. No DB.
+
+Data flow ->
+`raw_stream(T,P,RH)` -> `Tier0_EdgeRules` -> `Tier1_Physics` -> `Tier1_AdaptiveBaseline` -> `Tier2_Spatial` -> `ExtremeGate` -> `TriadClassifier` -> `RootCause` -> `SeverityScore` -> `HealthScore` -> `Imputer` -> `AlertCluster` -> `NL_Explain` -> `Streamlit`
+
+Core components ->
+- `FaultInjector`: spike, frozen, drift, dropout, noise burst stamped onto real rows
+- `Tier0_Edge`: rolling_var≈0 over window, |ΔT/Δt|>threshold, ADC hard bounds
+- `PhysicsEngine`: Magnus `e_s(T)=6.112*exp(17.67*T/(T+243.5))`, `e=e_s*(RH/100)`, rule `dew_point ≤ T`, barometric coupling `dP/dt < -2 hPa/hr` + humidity/temp storm signature
+- `BaselineLearner`: per-station `statsmodels.tsa.seasonal.seasonal_decompose`, residual z-score
+- `DriftDetector`: CUSUM / Page-Hinkley, O(1) update per sample
+- `SpatialCorroborator`: neighbor CUSUM agreement heuristic, synthetic neighbor stations via randomized offsets
+- `ExtremeGate`: blocks auto-suppression unless spatially/physically corroborated
+- `TriadClassifier`: outputs probability vector `[P_real, P_fault, P_comms]`
+- `RootCauseFingerprinter`: frozen, drift, spike, dropout, wetting-lock, comms + `dispatch_required: bool`
+- `SeverityScorer`: 0-100 weighted manifold distance + rule triggers + spatial disagreement, bootstrap CI
+- `HealthMonitor`: degrading % trend per station
+- `Imputer`: Ridge regression or k-NN with cyclical encodings `sin(2π*hour/24)`, `cos(2π*hour/24)`, `sin(2π*doy/365)`, `cos(2π*doy/365)`; tags: Observed / Estimated / Corrupted
+- `AlertClusterer`: groups correlated multi-parameter anomalies into single incident
+- `NLGenerator`: template string -> "CRITICAL: Temperature spike to 54.2°C flagged as Sensor Hardware Failure (Confidence: 96.8%). Root cause: ... Imputed replacement: 38.4°C ± 0.6°C."
+
+---
+
+**MODEL SELECTION**
+
+Goal -> max frequency / lowest latency / high throughput. No Bi-LSTM/Transformer in hot path.
+
+Tier 0/1 -> native Python/numpy conditionals. Zero ML inference. O(1) per sample.
+
+Baseline -> `seasonal_decompose` fit offline. Online = lookup + z-score. O(1).
+
+Drift -> custom CUSUM array update. O(1). No model serialization.
+
+Multivariate anomaly -> `sklearn.ensemble.IsolationForest(n_estimators=50, max_samples=256, contamination=0.01)`. Cold path only (runs if physics inconclusive).
+
+Root cause classification -> **LightGBM** (`boosting_type='gbdt'`, `num_leaves=31`, `max_depth=6`, `n_estimators=100`, `objective='multiclass'`). Classes: frozen, drift, spike, dropout, wetting, comms, normal.
+- Histogram-based splits -> ~10k+ inferences/sec per CPU core
+- Small model size -> fast load
+- TreeSHAP built-in -> explainability at near-zero cost
+
+Imputation -> `sklearn.linear_model.Ridge` (fit per station, predict online). Faster than `KNNImputer` for streaming.
+
+Why not XGBoost/RandomForest/NeuralNet -> LightGBM leaf-wise convergence = fewer splits for same accuracy. Histogram algorithm reduces memory bandwidth. RandomForest too slow at inference. NeuralNet overkill for tabular time-series with <10 features.
+
+---
+
+**FRONTEND UI**
+
+Streamlit. Single-page. Dark mode default. No sidebar.
+
+Layout ->
+- Row 0: Station selector dropdown + live UTC clock + system status badge (Normal / Degraded / Critical).
+- Row 1: Metric cards (4-column). Large monospace values. T, P, RH, Dew Point. Border color -> green=Verified, yellow=Estimated, red=Fault, purple=Extreme Event.
+- Row 2: Control panel (30%) + Alert feed (70%).
+  - Control: Buttons `Inject Spike`, `Inject Freeze`, `Inject Drift`, `Inject Dropout`, `Inject Noise`. Slider magnitude 1-10. Target station dropdown.
+  - Alert feed: Reverse chronological, collapsible. Each item -> severity badge (0-100), triad stacked bar (real% / fault% / comms%), root cause pill, `dispatch_required` wrench icon, imputed value `±CI`, NL explanation blockquote.
+- Row 3: Analytics (50%) + Health (50%).
+  - Analytics: "Atmospheric Fingerprint" radar chart (axes: T, P, RH, dew_point, dT/dt, dP/dt). "Corroboration Map" network graph (nodes=stations, edge thickness ∝ agreement, pulse on trigger).
+  - Health: Radial gauge 0-100% per station. 24h sparkline. Maintenance recommendation text.
+- Row 4: Physics validation.
+  - Dew point bound: scatter `T_actual` vs `T_dew`, violations red.
+  - Barometric coupling: time-series overlay P↓ RH↑ T↓, mismatch highlighted yellow.
+
+Uniquely crafted elements ->
+- `Extreme Gate Lock`: padlock icon center-top. Locked = suppression blocked (uncorroborated extreme). Unlocked = escalated genuine event. Click to inspect corroboration chain.
+- `Fault Fingerprint Glyphs`: frozen=⊘, spike=⚡, drift=↗, dropout=⚊, wetting=💧, comms=📡. Replaces generic icons.
+- `Corroboration Pulse`: edges in map glow when spatial agreement detected. Isolated station deviations flash red.
+
+Minimal -> zero 3D. Flat. All actions <2 clicks. No scrolling for core alert triage.

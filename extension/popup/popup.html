@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="head">
+    <span class="logo">Bubble AI</span>
+    <span id="conn" class="conn unknown">&#9679;</span>
+  </header>
+
+  <section class="status-list">
+    <div id="authRow" class="empty">Checking sign-in…</div>
+    <div id="statusRow" class="empty">No provider status yet.</div>
+  </section>
+
+  <footer class="actions">
+    <button id="authBtn" class="btn">Sign in with Google</button>
+    <button id="newSessionBtn" class="btn">New session</button>
+    <button id="openSettingsBtn" class="btn ghost">Settings</button>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

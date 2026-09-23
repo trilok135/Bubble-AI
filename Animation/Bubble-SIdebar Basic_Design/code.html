@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sign In // Bubble Telemetry Portal</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#0b0b0e',
+            cardBg: 'rgba(255, 255, 255, 0.98)',
+          },
+          boxShadow: {
+            'brut': '0 25px 60px -15px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.4)',
+            'dock': '0 20px 45px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="ambient-backdrop">
+    /* Misty monochrome backdrop matching the mountain mist ambiance */
+    body {
+      background-color: #7d828a;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(240, 243, 246, 0.88) 0%, rgba(185, 192, 201, 0.75) 45%, rgba(98, 104, 114, 0.92) 100%),
+        repeating-radial-gradient(circle at 15% 85%, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12) 2px, transparent 2px, transparent 8px);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    /* Subtle mountain mist texture overlay via CSS radial gradients */
+    .mist-clouds {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: 
+        radial-gradient(ellipse 70% 45% at 50% 10%, rgba(255,255,255,0.7) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 60% at 90% 80%, rgba(50,55,62,0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 10% 85%, rgba(40,44,50,0.4) 0%, transparent 70%);
+      z-index: 0;
+    }
+  </style>
+<style data-purpose="dither-pattern">
+    /* Dot Matrix / Halftone pattern generator */
+    .halftone-dither-bg {
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(#000000 1.2px, transparent 1.2px), 
+        radial-gradient(#000000 1.2px, #ffffff 1.2px);
+      background-size: 8px 8px;
+      background-position: 0 0, 4px 4px;
+    }
+    
+    /* Segmented pixel meter blocks styling */
+    .pixel-block {
+      width: 7px;
+      height: 9px;
+      margin-right: 2px;
+      display: inline-block;
+      transition: background-color 0.2s ease;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="font-sans text-neutral-900 antialiased relative flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-10 overflow-x-hidden select-none">
+<!-- Ambient Mist Fog Overlay -->
+<div aria-hidden="true" class="mist-clouds"></div>
+<!-- BEGIN: MainContainer -->
+<main class="relative z-10 w-full max-w-5xl flex flex-col items-center">
+<!-- Top floating brand pill -->
+<header class="mb-4 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/70 backdrop-blur-md border border-white/60 shadow-sm text-xs font-mono tracking-wider text-neutral-600 uppercase">
+<span class="w-2 h-2 rounded-full bg-neutral-900 animate-pulse"></span>
+      BUBBLE.AI // AUTH &amp; TELEMETRY v1.0
+    </header>
+<!-- BEGIN: AuthenticationCard -->
+<div class="w-full bg-cardBg rounded-[2rem] shadow-brut border border-white/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[580px] transition-all duration-300" data-purpose="sign-in-modal">
+<!-- LEFT SECTION: Sign In Form (7 cols) -->
+<section class="lg:col-span-6 p-8 sm:p-12 lg:p-14 flex flex-col justify-between bg-white">
+<div>
+<!-- Brand Logo Icon -->
+<div class="flex items-center gap-2 mb-6" data-purpose="brand-mark">
+<svg class="w-6 h-6 text-black" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"></path>
+</svg>
+<span class="font-mono text-xs font-bold uppercase tracking-widest text-neutral-800">BUBBLE INTELLIGENCE</span>
+</div>
+<!-- Header Titles -->
+<h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-950 mb-1.5">Sign In</h1>
+<p class="text-sm text-neutral-400 font-mono tracking-tight mb-8">Access your adaptive study memory &amp; custom AI modes</p>
+<!-- Social Sign-in Buttons -->
+<div class="space-y-2.5 mb-6" data-purpose="oauth-providers">
+<!-- Google Button -->
+<button class="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-neutral-200 hover:border-neutral-400 bg-white hover:bg-neutral-50/80 font-mono text-xs font-medium text-neutral-800 transition-all duration-150" type="button">
+<svg class="w-4 h-4" viewbox="0 0 24 24">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"></path>
+</svg>
+<span>Sign in with Google</span>
+</button>
+<!-- Apple Button -->
+<button class="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-neutral-200 hover:border-neutral-400 bg-white hover:bg-neutral-50/80 font-mono text-xs font-medium text-neutral-800 transition-all duration-150" type="button">
+<svg class="w-4 h-4 fill-current text-neutral-900" viewbox="0 0 170 170">
+<path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.85-11.93-14.42-7.88-12.16-13.3-25.76-16.27-40.81-2.97-15.05-2.27-28.71 2.1-40.97 4.37-12.26 11.25-21.6 20.65-28.02 9.4-6.42 19.86-9.76 31.39-10.02 4.12 0 8.87.89 14.24 2.68 5.37 1.79 9.17 2.91 11.4 3.35 2.8-.57 6.42-1.63 10.87-3.17 4.45-1.54 8.78-2.31 12.98-2.31 10.45.54 19.34 3.75 26.68 9.64 7.34 5.88 12.63 13.33 15.86 22.35-9.64 5.75-14.46 13.88-14.46 24.39 0 8.44 3.28 15.69 9.84 21.75 6.56 6.06 14.54 9.64 23.94 10.74-2.24 7.24-5.32 14.67-9.24 22.28zM119.22 31.81c0-5.88 2.05-11.83 6.15-17.85 4.1-6.02 9.5-10.67 16.2-13.96-1.12 5.88-3.41 11.66-6.87 17.34-3.46 5.68-8.21 9.92-14.25 12.72-.41-.58-.74-1.16-.99-1.75-.16-.5-.24-1.02-.24-1.5z"></path>
+</svg>
+<span>Sign in with Apple</span>
+</button>
+</div>
+<!-- Subtle OR Divider -->
+<div class="relative flex items-center justify-center my-5">
+<div class="border-t border-neutral-200 w-full"></div>
+<span class="bg-white px-3 font-mono text-[10px] uppercase tracking-widest text-neutral-400">OR</span>
+</div>
+<!-- Form Inputs -->
+<form class="space-y-4" onsubmit="event.preventDefault()">
+<div>
+<label class="block font-mono text-xs font-semibold text-neutral-800 mb-1" for="email">Email</label>
+<input class="w-full px-4 py-2.5 rounded-xl border border-neutral-200 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 text-sm font-sans placeholder:font-mono placeholder:text-neutral-300 transition-colors" id="email" placeholder="Enter your email" type="email" value="student@bubble.ai"/>
+</div>
+<div>
+<div class="flex justify-between items-center mb-1">
+<label class="font-mono text-xs font-semibold text-neutral-800" for="password">Password</label>
+<a class="font-mono text-[11px] font-semibold text-neutral-900 hover:underline" href="#forgot">Forgot Password?</a>
+</div>
+<input class="w-full px-4 py-2.5 rounded-xl border border-neutral-200 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 text-sm font-sans placeholder:font-mono placeholder:text-neutral-300 transition-colors" id="password" placeholder="Enter your password" type="password" value="••••••••••••"/>
+</div>
+<!-- Solid Black Action Button -->
+<button class="w-full mt-2 py-3 px-4 bg-neutral-950 hover:bg-neutral-800 text-white rounded-xl font-mono text-xs font-medium tracking-wide uppercase shadow-sm transition-all duration-150 active:scale-[0.99]" type="submit">
+              Sign In
+            </button>
+</form>
+</div>
+<!-- Card Footer -->
+<footer class="mt-8 text-center">
+<p class="font-mono text-xs text-neutral-400">
+            Don't have an account? 
+            <a class="text-neutral-950 font-bold hover:underline ml-1" href="#register">Create an Account</a>
+</p>
+</footer>
+</section>
+<!-- RIGHT SECTION: Dither Pixel Art Canvas & Live Halftone Telemetry (6 cols) -->
+<section class="lg:col-span-6 relative bg-neutral-100 flex flex-col items-center justify-between border-t lg:border-t-0 lg:border-l border-neutral-100 overflow-hidden min-h-[350px]">
+<!-- Interactive Canvas Dither Field -->
+<canvas class="absolute inset-0 w-full h-full object-cover z-0" data-purpose="dither-bitmap-illustration" id="ditherCanvas"></canvas>
+<!-- Top Right Micro HUD Info -->
+<div class="relative z-10 w-full flex justify-between items-start p-6 font-mono text-[10px] text-neutral-700 select-none backdrop-blur-[2px]">
+<div class="bg-white/80 px-2.5 py-1 rounded-md border border-neutral-200/80 shadow-xs">
+            MATRIX: 128x128 LOCAL EMBEDDINGS
+          </div>
+<div class="bg-white/80 px-2 py-1 rounded-md border border-neutral-200/80 shadow-xs flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+            NODE: ONLINE
+          </div>
+</div>
+<!-- Center Overlay Text / Halftone Core Branding -->
+<div class="relative z-10 text-center px-6 py-8 pointer-events-none">
+<div class="inline-block font-mono text-xs tracking-widest text-neutral-900 bg-white/90 border border-neutral-200 px-3 py-1.5 rounded-lg shadow-sm">
+            ✦ ZERO-COST LOCAL RAG &amp; ROUTER ENGINE ✦
+          </div>
+</div>
+<!-- Bottom Halftone Graphic Footnote -->
+<div class="relative z-10 w-full p-6 flex justify-between items-end font-mono text-[10px] text-neutral-600 bg-gradient-to-t from-white/90 via-white/50 to-transparent">
+<span class="tracking-widest">FIG. 01 — ADAPTIVE MEMORY DYNAMICS</span>
+<span class="text-neutral-400">BUBBLE.AI // CORE</span>
+</div>
+</section>
+</div>
+<!-- END: AuthenticationCard -->
+</main>
+<!-- END: MainContainer -->
+<!-- BEGIN: FloatingTelemetryDock (Inspired by Image 2 - loseva.pro budget widget) -->
+<aside class="fixed bottom-6 right-6 z-50 w-full max-w-sm sm:max-w-md" data-purpose="budget-telemetry-dock">
+<div class="bg-[#0e0e12] text-white rounded-3xl p-5 sm:p-6 shadow-dock border border-white/10 backdrop-blur-xl relative overflow-hidden transition-all duration-300">
+<!-- Dock Decorative Corner Accent -->
+<div class="absolute -top-12 -right-12 w-28 h-28 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
+<!-- Dock Header: Dot-Matrix Title & Status Indicator -->
+<div class="flex items-center justify-between mb-4">
+<div>
+<!-- Dot matrix styled title -->
+<h2 class="font-mono text-xl sm:text-2xl font-black tracking-widest text-white uppercase" style="letter-spacing: 0.15em;">
+            BUBBLE TELEMETRY
+          </h2>
+<p class="font-mono text-[10px] text-neutral-400 tracking-wider">STUDY MEMORY &amp; PROVIDER ROUTER</p>
+</div>
+<div class="flex items-center gap-2 bg-neutral-900/90 border border-neutral-800 px-2.5 py-1 rounded-full text-[10px] font-mono text-neutral-300">
+<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          LIVE DOCK
+        </div>
+</div>
+<!-- Stats Line (SPENT vs LIMIT) -->
+<div class="flex justify-between items-baseline font-mono text-xs font-bold text-neutral-300 mb-2">
+<div class="flex items-center gap-1.5">
+<span class="text-neutral-400">MEMORY:</span>
+<span class="text-white text-sm" id="spentStat">4 / 5 EXCHANGES</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-neutral-400">COST:</span>
+<span class="text-white text-sm">$0.00 / FREE TIER</span>
+</div>
+</div>
+<!-- Segmented Pixel Meter Bar (Exact visual style from Image 2) -->
+<div class="w-full flex items-center justify-start overflow-hidden py-1 mb-4 bg-neutral-950/80 px-2 rounded-md border border-neutral-800" data-purpose="segmented-progress-meter" id="pixelMeter">
+<!-- Pixel blocks generated via JavaScript for exact high fidelity match -->
+</div>
+<!-- Live ASCII Simulation Viewport (Toggleable & Interactive) -->
+<div class="mb-4 bg-black/90 border border-neutral-800 rounded-xl p-2.5 overflow-hidden transition-all duration-300" id="asciiSection">
+<div class="flex justify-between items-center text-[10px] font-mono text-neutral-400 pb-1 mb-1 border-b border-neutral-800/80">
+<span>STUDY_MEMORY_SPHERE.ASC</span>
+<span class="text-emerald-400 font-bold" id="fpsCounter">60 FPS</span>
+</div>
+<pre class="font-mono text-[9px] leading-[9px] text-white select-none text-center h-20 overflow-hidden flex items-center justify-center font-bold tracking-tighter" id="asciiScreen"></pre>
+</div>
+<!-- Dock Footer: Warning prompt & 'DETAILS' pill button -->
+<div class="flex items-center justify-between gap-4 pt-1">
+<div class="font-mono text-[11px] leading-tight text-neutral-300 uppercase tracking-tight">
+<p class="font-semibold text-neutral-100">PRIMARY ROUTER: GROQ (180ms FAST INFERENCE)</p>
+<p class="text-neutral-400 text-[10px]">FALLBACK CHAIN: GEMINI → OPENROUTER READY</p>
+</div>
+<button class="shrink-0 px-5 py-2 rounded-full bg-white hover:bg-neutral-200 text-black font-mono text-xs font-bold uppercase tracking-wider shadow-sm transition-all duration-150 active:scale-95" id="detailsToggleBtn" type="button">
+          DETAILS
+        </button>
+</div>
+<!-- Watermark text matching image 2: LOSEVA.PRO -->
+<div class="mt-3 text-right">
+<span class="font-mono text-[9px] text-neutral-400 tracking-widest uppercase">BUBBLE.AI NOTE</span>
+</div>
+</div>
+</aside>
+<!-- END: FloatingTelemetryDock -->
+<!-- BEGIN: JavaScript Logic -->
+<!-- Script 1: Canvas Dither Simulation matching Image 1 -->
+<script data-purpose="dither-canvas-generator">
+    (function initDitherCanvas() {
+      const canvas = document.getElementById('ditherCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width = (canvas.width = canvas.parentElement.clientWidth || 500);
+      let height = (canvas.height = canvas.parentElement.clientHeight || 600);
+
+      window.addEventListener('resize', () => {
+        if (!canvas.parentElement) return;
+        width = canvas.width = canvas.parentElement.clientWidth;
+        height = canvas.height = canvas.parentElement.clientHeight;
+      });
+
+      // Procedural dither rendering simulating bitmap noise wave
+      let frame = 0;
+      function renderDither() {
+        frame += 0.02;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+
+        const step = 6; // pixel pitch
+        const cx = width * 0.85;
+        const cy = height * 0.35;
+
+        for (let x = 0; x < width; x += step) {
+          for (let y = 0; y < height; y += step) {
+            // Distance from vortex center
+            const dx = x - cx;
+            const dy = y - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Noise factor based on sin waves
+            const wave = Math.sin(dist * 0.02 - frame) + Math.cos((x + y) * 0.015 + frame * 0.5);
+            const density = (1 - (dist / (width * 0.9))) * 1.5 + wave * 0.35;
+
+            // Bayer-style or threshold comparison
+            const threshold = ((x % 8) + (y % 8) * 2) / 20;
+
+            if (density > threshold && x > width * 0.15) {
+              const rectSize = step - 1.5;
+              ctx.fillStyle = '#0a0a0c';
+              ctx.fillRect(x, y, rectSize, rectSize);
+            }
+          }
+        }
+        requestAnimationFrame(renderDither);
+      }
+      renderDither();
+    })();
+  </script>
+<!-- Script 2: Telemetry Dock Pixel Meter & Live ASCII Sphere -->
+<script data-purpose="telemetry-interactive-dock">
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Generate Pixel Progress Meter blocks
+      const meter = document.getElementById('pixelMeter');
+      const totalBlocks = 38;
+      const filledBlocks = 26; // representing $1400 / $2000 spent (~70%)
+
+      if (meter) {
+        for (let i = 0; i < totalBlocks; i++) {
+          const block = document.createElement('span');
+          block.className = 'pixel-block rounded-[1px]';
+          if (i < filledBlocks) {
+            block.style.backgroundColor = '#ffffff';
+          } else {
+            block.style.backgroundColor = '#26262a';
+          }
+          meter.appendChild(block);
+        }
+      }
+
+      // 2. Interactive Details Button Toggle
+      const detailsBtn = document.getElementById('detailsToggleBtn');
+      const asciiSection = document.getElementById('asciiSection');
+      let expanded = true;
+
+      detailsBtn.addEventListener('click', () => {
+        expanded = !expanded;
+        if (!expanded) {
+          asciiSection.style.display = 'none';
+          detailsBtn.innerText = 'EXPAND';
+        } else {
+          asciiSection.style.display = 'block';
+          detailsBtn.innerText = 'DETAILS';
+        }
+      });
+
+      // 3. Realtime procedural ASCII Sphere Renderer
+      const asciiElement = document.getElementById('asciiScreen');
+      const chars = " .:-=+*#%@";
+      let A = 0;
+      let B = 0;
+      const width = 46;
+      const height = 12;
+
+      function renderAscii() {
+        const b = [];
+        const z = [];
+        for (let k = 0; k < width * height; k++) {
+          b[k] = ' ';
+          z[k] = 0;
+        }
+
+        // Torus / sphere parametric projection
+        for (let theta = 0; theta < 6.28; theta += 0.28) {
+          for (let phi = 0; phi < 6.28; phi += 0.12) {
+            const sinT = Math.sin(theta), cosT = Math.cos(theta);
+            const sinP = Math.sin(phi), cosP = Math.cos(phi);
+            const sinA = Math.sin(A), cosA = Math.cos(A);
+            const sinB = Math.sin(B), cosB = Math.cos(B);
+
+            const h = cosT + 2; // radius
+            const D = 1 / (sinP * h * sinA + sinT * cosA + 5);
+            const t = sinP * h * cosA - sinT * sinA;
+
+            const x = Math.floor(width / 2 + 22 * D * (cosP * h * cosB - t * sinB));
+            const y = Math.floor(height / 2 + 10 * D * (cosP * h * sinB + t * cosB));
+            const o = x + width * y;
+
+            const N = Math.floor(8 * ((sinT * sinA - sinP * cosT * cosA) * cosB - sinP * cosT * sinA - sinT * cosA - cosP * cosT * sinB));
+            if (height > y && y >= 0 && width > x && x >= 0 && D > z[o]) {
+              z[o] = D;
+              b[o] = chars[Math.max(0, N)];
+            }
+          }
+        }
+
+        let asciiOutput = '';
+        for (let k = 0; k < width * height; k++) {
+          asciiOutput += (k % width === width - 1) ? b[k] + '\n' : b[k];
+        }
+
+        if (asciiElement) {
+          asciiElement.textContent = asciiOutput;
+        }
+
+        A += 0.04;
+        B += 0.03;
+        requestAnimationFrame(renderAscii);
+      }
+
+      renderAscii();
+    });
+  </script>
+<!-- END: JavaScript Logic -->
+</body></html>
